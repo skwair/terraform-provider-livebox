@@ -17,6 +17,7 @@ type PortForwarding struct {
 	InternalPort int
 	PortRange    int
 	Destination  string
+	Source       string
 	Enabled      bool
 }
 
@@ -78,6 +79,7 @@ func (c *Client) ListPortForwardings() ([]PortForwarding, error) {
 			InternalPort: internalPort,
 			PortRange:    portRange,
 			Destination:  raw.DestinationIPAddress,
+			Source:       raw.SourcePrefix,
 			Enabled:      raw.Enable,
 		}
 		out = append(out, pf)
@@ -112,6 +114,7 @@ type PortForwardingConfig struct {
 	PortRange    int
 	Protocol     Protocol
 	Destination  string
+	Source       string
 	Enabled      bool
 }
 
@@ -137,8 +140,18 @@ func (c PortForwardingConfig) validate() error {
 		return fmt.Errorf("invalid protocol; must be one of: %q, %q or %q", "tcp", "udp", "tcp/udp")
 	}
 
-	if ip := net.ParseIP(c.Destination); ip == nil {
+	if dest := net.ParseIP(c.Destination); dest == nil {
 		return errors.New("invalid destination; must be a valid IP address")
+	}
+
+	// c.Source is optional, so if empty we don't need to validate it (it's fine)
+	// However, it can also be a list of IP addresses separated by commas, so we need to validate that.
+	if c.Source != "" {
+		for _, src := range strings.Split(c.Source, ",") {
+			if src = strings.TrimSpace(src); net.ParseIP(src) == nil {
+				return errors.New("invalid source; must be a valid IP address or a list of IP addresses separated by commas")
+			}
+		}
 	}
 
 	return nil
@@ -160,7 +173,7 @@ func (c *Client) UpsertPortForwarding(cfg PortForwardingConfig) error {
 			"internalPort":         cfg.InternalPort,
 			"externalPort":         formatPortRange(cfg.ExternalPort, cfg.PortRange),
 			"destinationIPAddress": cfg.Destination,
-			"sourcePrefix":         "",
+			"sourcePrefix":         cfg.Source,
 			"persistent":           true,
 			"enable":               cfg.Enabled,
 			"sourceInterface":      "data",

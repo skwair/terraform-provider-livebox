@@ -71,6 +71,11 @@ func (r *portForwardingResource) Schema(_ context.Context, _ resource.SchemaRequ
 				Required:    true,
 				Description: "IP address to forward traffic to.",
 			},
+			"source": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "Allowed external IP addresses to forward traffic from, separated by commas.",
+			},
 			"enabled": schema.BoolAttribute{
 				Required:    true,
 				Description: "Whether this port forwarding rule is enabled or not.",
@@ -86,6 +91,7 @@ type portForwardingModel struct {
 	InternalPort basetypes.Int64Value  `tfsdk:"internal_port"`
 	PortRange    basetypes.Int64Value  `tfsdk:"port_range"`
 	Destination  basetypes.StringValue `tfsdk:"destination"`
+	Source       basetypes.StringValue `tfsdk:"source"`
 	Enabled      basetypes.BoolValue   `tfsdk:"enabled"`
 }
 
@@ -105,6 +111,7 @@ func (r *portForwardingResource) Create(ctx context.Context, req resource.Create
 		PortRange:    int(plan.PortRange.ValueInt64()),
 		Protocol:     livebox.Protocol(plan.Protocol.ValueString()),
 		Destination:  plan.Destination.ValueString(),
+		Source:       plan.Source.ValueString(),
 		Enabled:      plan.Enabled.ValueBool(),
 	}
 
@@ -120,6 +127,7 @@ func (r *portForwardingResource) Create(ctx context.Context, req resource.Create
 	plan.Name = types.StringValue(cfg.Name)
 	plan.Protocol = types.StringValue(string(cfg.Protocol))
 	plan.Destination = types.StringValue(cfg.Destination)
+	plan.Source = types.StringValue(cfg.Source)
 	plan.ExternalPort = types.Int64Value(int64(cfg.ExternalPort))
 	plan.InternalPort = types.Int64Value(int64(cfg.InternalPort))
 	plan.PortRange = types.Int64Value(int64(cfg.PortRange))
@@ -182,6 +190,7 @@ func (r *portForwardingResource) Update(ctx context.Context, req resource.Update
 		PortRange:    int(plan.PortRange.ValueInt64()),
 		Protocol:     livebox.Protocol(plan.Protocol.ValueString()),
 		Destination:  plan.Destination.ValueString(),
+		Source:       plan.Source.ValueString(),
 		Enabled:      plan.Enabled.ValueBool(),
 	}
 
@@ -197,6 +206,7 @@ func (r *portForwardingResource) Update(ctx context.Context, req resource.Update
 	plan.Name = types.StringValue(cfg.Name)
 	plan.Protocol = types.StringValue(string(cfg.Protocol))
 	plan.Destination = types.StringValue(cfg.Destination)
+	plan.Source = types.StringValue(cfg.Source)
 	plan.ExternalPort = types.Int64Value(int64(cfg.ExternalPort))
 	plan.InternalPort = types.Int64Value(int64(cfg.InternalPort))
 	plan.PortRange = types.Int64Value(int64(cfg.PortRange))
